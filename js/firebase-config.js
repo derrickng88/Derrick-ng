@@ -13,12 +13,12 @@ const FIREBASE_APP_STATE = {
   currentUser: null,
   isCloudSynced: false,
   config: JSON.parse(localStorage.getItem('hz_firebase_config') || 'null') || {
-    apiKey: "AIzaSyDummyKey_myhanzimaster_app",
+    apiKey: "AIzaSyCvXgomIHkm9lIdzlosGuYFa5YD72MnJBA",
     authDomain: "myhanzimaster.firebaseapp.com",
     projectId: "myhanzimaster",
-    storageBucket: "myhanzimaster.appspot.com",
-    messagingSenderId: "109876543210",
-    appId: "1:109876543210:web:abcdef1234567890"
+    storageBucket: "myhanzimaster.firebasestorage.app",
+    messagingSenderId: "619487124865",
+    appId: "1:619487124865:web:7d2230acb188a99e5d5c80"
   },
   auth: null,
   db: null
@@ -41,15 +41,29 @@ function initFirebase() {
           FIREBASE_APP_STATE.currentUser = user;
           updateAuthUI(user);
           syncFromCloud();
-          showToast(`Masuk sebagai: ${user.displayName || user.email || 'Pengguna Anonim'}`, 'success');
         } else {
-          FIREBASE_APP_STATE.currentUser = null;
-          updateAuthUI(null);
+          // Auto sign-in anonymously for seamless cloud sync
+          FIREBASE_APP_STATE.auth.signInAnonymously().catch((err) => {
+            console.log("Anonymous Auth not enabled, using Guest Local ID:", err.message);
+            // Fallback guest user
+            FIREBASE_APP_STATE.currentUser = {
+              uid: getOrCreateLocalUserId(),
+              displayName: 'Pelajar Mandarin',
+              isAnonymous: true
+            };
+            updateAuthUI(FIREBASE_APP_STATE.currentUser);
+            syncToCloud();
+          });
         }
       });
 
       updateCloudStatusBadge(true);
-      console.log("Firebase initialized successfully.");
+      console.log("Firebase initialized successfully with project:", FIREBASE_APP_STATE.config.projectId);
+      
+      // Auto seed initial data if first time
+      setTimeout(() => {
+        syncToCloud();
+      }, 1500);
     } else {
       console.warn("Firebase SDK not loaded, running in offline fallback mode.");
       updateCloudStatusBadge(false);
@@ -58,6 +72,15 @@ function initFirebase() {
     console.warn("Firebase init error (offline mode active):", err);
     updateCloudStatusBadge(false);
   }
+}
+
+function getOrCreateLocalUserId() {
+  let uid = localStorage.getItem('hz_guest_uid');
+  if (!uid) {
+    uid = 'user_' + Math.random().toString(36).substring(2, 11);
+    localStorage.setItem('hz_guest_uid', uid);
+  }
+  return uid;
 }
 
 // Update Header UI based on Auth State
