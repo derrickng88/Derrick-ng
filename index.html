@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HanziMaster (学中文) - Aplikasi Belajar Mandarin & Kuis HSK 1-5</title>
+  <meta name="description" content="Aplikasi interaktif belajar bahasa Mandarin, kosakata HSK 1 sampai HSK 5, Flashcard 3D, Pembuat Kuis Kustom, Latihan Menulis Karakter Hanzi & Nada Pinyin.">
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ==================== HEADER & NAVBAR ==================== -->
+  <header class="header">
+    <div class="nav-container">
+      <div class="brand" onclick="switchTab('vocab')">
+        <div class="brand-seal">
+          <span>漢</span>
+        </div>
+        <div class="brand-text">
+          <h1>HanziMaster <span style="font-size:0.85rem; color:var(--crimson-500); font-family:var(--font-calligraphy);">学中文</span></h1>
+          <div class="tagline">Platform Belajar Mandarin & Kuis HSK 1 - 5</div>
+        </div>
+      </div>
+
+      <!-- Main Navigation Tabs -->
+      <nav class="nav-tabs">
+        <button class="nav-tab-btn active" data-tab="vocab">
+          <i class="fas fa-book-open"></i> Kosakata HSK
+        </button>
+        <button class="nav-tab-btn" data-tab="dictionary">
+          <i class="fas fa-spell-check"></i> Kamus Mandarin
+        </button>
+        <button class="nav-tab-btn" data-tab="flashcards">
+          <i class="fas fa-clone"></i> Flashcard 3D
+        </button>
+        <button class="nav-tab-btn" data-tab="quiz">
+          <i class="fas fa-brain"></i> Arena Kuis
+        </button>
+        <button class="nav-tab-btn" data-tab="practice">
+          <i class="fas fa-pen-nib"></i> Latihan Tulis
+        </button>
+        <button class="nav-tab-btn" data-tab="tones">
+          <i class="fas fa-music"></i> Nada Pinyin
+        </button>
+        <button class="nav-tab-btn" data-tab="maker">
+          <i class="fas fa-plus-circle"></i> Buat Kuis / Kosakata
+        </button>
+      </nav>
+
+      <!-- User Stats & Theme Controls -->
+      <div class="header-actions">
+        <div class="streak-badge" title="Daily Learning Streak">
+          <i class="fas fa-fire"></i>
+          <span id="streakDisplay">1 Hari</span>
+        </div>
+        <button class="icon-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Ubah Tema Gelap/Terang">
+          <i class="fas fa-moon" id="themeToggleIcon"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== MAIN CONTENT WRAPPER ==================== -->
+  <main class="main-wrapper">
+
+    <!-- ==================== VIEW 1: VOCABULARY EXPLORER ==================== -->
+    <section id="view-vocab" class="view-section active">
+      
+      <!-- Hero Banner & Stats -->
+      <div class="hero-banner">
+        <div class="hero-text">
+          <h2>Selamat Datang di HanziMaster <span>🇨🇳</span></h2>
+          <p>Pelajari kosakata Mandarin terstruktur standar HSK 1 hingga HSK 5 dengan audio asli, pinyin, contoh kalimat, dan terjemahan bahasa Indonesia.</p>
+        </div>
+        <div class="hero-stats">
+          <div class="stat-chip">
+            <div class="stat-icon words"><i class="fas fa-check-double"></i></div>
+            <div class="stat-info">
+              <div class="stat-value" id="statTotalLearned">0</div>
+              <div class="stat-label">Hafal</div>
+            </div>
+          </div>
+          <div class="stat-chip">
+            <div class="stat-icon quiz"><i class="fas fa-trophy"></i></div>
+            <div class="stat-info">
+              <div class="stat-value" id="statTotalQuiz">0</div>
+              <div class="stat-label">Kuis Selesai</div>
+            </div>
+          </div>
+          <div class="stat-chip">
+            <div class="stat-icon rank"><i class="fas fa-medal"></i></div>
+            <div class="stat-info">
+              <div class="stat-value" id="statUserRank">秀才</div>
+              <div class="stat-label">Peringkat</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HSK Level Selector Tabs -->
+      <div class="hsk-level-bar">
+        <button class="hsk-pill active" data-hsk="all">
+          <span>Semua Level</span>
+          <span class="badge-count">0</span>
+        </button>
+        <button class="hsk-pill" data-hsk="1">
+          <span>HSK 1 (Pemula)</span>
+          <span class="badge-count">0</span>
+        </button>
+        <button class="hsk-pill" data-hsk="2">
+          <span>HSK 2 (Dasar)</span>
+          <span class="badge-count">0</span>
+        </button>
+        <button class="hsk-pill" data-hsk="3">
+          <span>HSK 3 (Menengah)</span>
+          <span class="badge-count">0</span>
+        </button>
+        <button class="hsk-pill" data-hsk="4">
+          <span>HSK 4 (Lanjutan)</span>
+          <span class="badge-count">0</span>
+        </button>
+        <button class="hsk-pill" data-hsk="5">
+          <span>HSK 5 (Mahir)</span>
+          <span class="badge-count">0</span>
+        </button>
+        <button class="hsk-pill" data-hsk="custom">
+          <span>Kustom Saya</span>
+          <span class="badge-count">0</span>
+        </button>
+      </div>
+
+      <!-- Toolbar: Search & Quick Filters -->
+      <div class="vocab-toolbar">
+        <div class="search-box">
+          <i class="fas fa-search"></i>
+          <input type="text" id="vocabSearchInput" placeholder="Cari Hanzi, Pinyin, atau Arti (cth: 你好, nǐ hǎo, makan)...">
+        </div>
+        <div class="filter-actions">
+          <button class="toggle-mode-btn" id="filterFavBtn">
+            <i class="fas fa-heart" style="color:var(--crimson-500);"></i> Tersimpan
+          </button>
+          <button class="toggle-mode-btn" id="filterLearnedBtn">
+            <i class="fas fa-check-circle" style="color:var(--jade-400);"></i> Sudah Hafal
+          </button>
+          <button class="btn-primary" onclick="switchTab('flashcards')">
+            <i class="fas fa-play"></i> Mode Flashcard
+          </button>
+        </div>
+      </div>
+
+      <!-- Cards Grid -->
+      <div class="vocab-grid" id="vocabGrid">
+        <!-- Rendered dynamically by JS -->
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 1.5: KAMUS MANDARIN LENGKAP ==================== -->
+    <section id="view-dictionary" class="view-section">
+      <div class="hero-banner" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(19, 27, 46, 0.8) 50%, rgba(245, 158, 11, 0.1) 100%);">
+        <div class="hero-text">
+          <h2>Kamus Bahasa Mandarin - Indonesia Lengkap <span>📖</span></h2>
+          <p>Cari kata dalam Hanzi (汉字), Pinyin, atau Bahasa Indonesia. Dilengkapi audio pengucapan, jenis kata, contoh kalimat, dan level HSK.</p>
+        </div>
+        <div class="hero-stats">
+          <div class="stat-chip">
+            <div class="stat-icon words"><i class="fas fa-book"></i></div>
+            <div class="stat-info">
+              <div class="stat-value" id="dictTotalWords">0</div>
+              <div class="stat-label">Total Entri Kamus</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dictionary Search & Filter Bar -->
+      <div class="vocab-toolbar">
+        <div class="search-box">
+          <i class="fas fa-search"></i>
+          <input type="text" id="dictSearchInput" placeholder="Cari kata: cth. 吃饭, chīfàn, makan, kopi, sekolah, 谢谢...">
+        </div>
+        <div class="filter-actions">
+          <select id="dictCategorySelect" style="background:var(--bg-tertiary); border:1px solid var(--border-color); color:var(--text-primary); padding:0.6rem 1rem; border-radius:var(--radius-md); font-size:0.85rem; outline:none;">
+            <option value="all">Semua Kategori & Level</option>
+            <option value="1">Level HSK 1</option>
+            <option value="2">Level HSK 2</option>
+            <option value="3">Level HSK 3</option>
+            <option value="4">Level HSK 4</option>
+            <option value="5">Level HSK 5</option>
+            <option value="Makanan">Makanan & Minuman</option>
+            <option value="Transportasi">Transportasi & Arah</option>
+            <option value="Teknologi">Teknologi & Media</option>
+            <option value="Bisnis">Bisnis & Profesi</option>
+            <option value="Pendidikan">Pendidikan & Sekolah</option>
+            <option value="Ungkapan">Ungkapan Sehari-hari</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Quick Alphabet Pinyin Bar (A-Z) -->
+      <div style="display:flex; flex-wrap:wrap; gap:0.35rem; margin-bottom:1.5rem; background:var(--bg-secondary); padding:0.75rem; border-radius:var(--radius-md); border:1px solid var(--border-color); align-items:center;" id="dictAlphaBar">
+        <span style="font-size:0.8rem; font-weight:700; color:var(--text-muted); margin-right:0.5rem;">Abjad Pinyin:</span>
+        <button class="dict-alpha-btn active" onclick="filterDictByAlpha('ALL')">SEMUA</button>
+        <button class="dict-alpha-btn" onclick="filterDictByAlpha('A')">A</button>
+        <button class="dict-alpha-btn" onclick="filterDictByAlpha('B')">B</button>
+        <button class="dict-alpha-btn" onclick="filterDictByAlpha('C')">C</button>
+        <button class="dict-alpha-btn" onclick="filterDictByAlpha('D')">D</button>
+        <button class="dict-alpha-btn" onclick="filterDictByAlpha('E')">E</button>
+        <button class="dict-alpha-btn" onclick="filterDictByAlpha('F')">F</button>
+        <button class="dict-alpha-btn" onclick="filterDictByAlpha('G')">G</button>
+        <button class="dict-alpha-btn" onclick="filterDictByAlpha('H')">H</button>
+        <button class="dict-alpha-btn" onclick="filterDictByAlpha('J')">J</button>
+        <button class="dict-alpha-btn" onclick="filterDictByAlpha('K')">K</button>
+        <button class="dict-alpha-btn" onclick="filterDictByAlpha('L')">L</button>
+        <button class="dict-alpha-btn" onclick="filterDictByAlpha('M')">M</button>
+        <button class="dict-alpha-btn" onclick="filterDictByAlpha('N')">N</button>
+        <button class="dict-alpha-btn" onclick="filterDictByAlpha('O')">O</button>
+        <button class="dict-alpha-btn" onclick="filterDictByAlpha('P')">P</button>
+        <button class="dict-alpha-btn" onclick="filterDictByAlpha('Q')">Q</button>
+        <button class="dict-alpha-btn" onclick="filterDictByAlpha('R')">R</button>
+        <button class="dict-alpha-btn" onclick="filterDictByAlpha('S')">S</button>
+        <button class="dict-alpha-btn" onclick="filterDictByAlpha('T')">T</button>
+        <button class="dict-alpha-btn" onclick="filterDictByAlpha('W')">W</button>
+        <button class="dict-alpha-btn" onclick="filterDictByAlpha('X')">X</button>
+        <button class="dict-alpha-btn" onclick="filterDictByAlpha('Y')">Y</button>
+        <button class="dict-alpha-btn" onclick="filterDictByAlpha('Z')">Z</button>
+      </div>
+
+      <!-- Dictionary Table / Card Results -->
+      <div id="dictionaryResultsContainer" class="vocab-grid">
+        <!-- Rendered by JS -->
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 2: FLASHCARD 3D ==================== -->
+    <section id="view-flashcards" class="view-section">
+      <div style="text-align: center; margin-bottom: 2rem;">
+        <h2 style="font-size: 1.8rem; font-weight: 800; margin-bottom: 0.35rem;">Mode Flashcard Interaktif</h2>
+        <p style="color: var(--text-secondary);">Klik kartu untuk membalik dan melihat arti, pinyin, serta contoh kalimat.</p>
+      </div>
+
+      <div class="flashcard-stage">
+        <div class="flashcard-3d-box" id="flashcardBox" onclick="flipFlashcard()">
+          
+          <!-- Front Face -->
+          <div class="flashcard-face front">
+            <div style="display:flex; justify-content:space-between; width:100%;">
+              <span class="hsk-level-tag hsk1" id="fcFrontLevel">HSK 1</span>
+              <span style="font-size:0.85rem; color:var(--text-muted);" id="fcProgressText">1 / 50</span>
+            </div>
+            
+            <div class="flashcard-hanzi-giant" id="fcFrontHanzi">你好</div>
+            
+            <div class="flip-hint">
+              <i class="fas fa-sync-alt"></i> <span id="fcFrontHint">Klik untuk membalik kartu</span>
+            </div>
+          </div>
+
+          <!-- Back Face -->
+          <div class="flashcard-face back">
+            <div style="width:100%; display:flex; justify-content:space-between; align-items:center;">
+              <span class="card-hanzi" id="fcBackHanzi" style="font-size:1.8rem;">你好</span>
+              <button class="card-btn" onclick="event.stopPropagation(); speakMandarin(document.getElementById('fcBackHanzi').textContent)" title="Dengarkan Suara">
+                <i class="fas fa-volume-up" style="font-size:1.2rem;"></i>
+              </button>
+            </div>
+
+            <div style="margin: 0.75rem 0;">
+              <div class="card-pinyin" id="fcBackPinyin" style="font-size:1.35rem;">nǐ hǎo</div>
+              <div class="card-meaning-id" id="fcBackMeaning" style="font-size:1.2rem;">Halo / Apa kabar</div>
+            </div>
+
+            <div id="fcBackExample" style="background:var(--bg-secondary); padding:0.75rem; border-radius:var(--radius-sm); width:100%;">
+              <!-- Injected by JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="flashcard-controls">
+          <button class="btn-secondary" onclick="prevFlashcard()">
+            <i class="fas fa-chevron-left"></i> Sebelumnya
+          </button>
+          <button class="btn-secondary" onclick="shuffleFlashcard()" title="Acak Urutan Kartu">
+            <i class="fas fa-random"></i> Acak
+          </button>
+          <button class="btn-primary" onclick="nextFlashcard()">
+            Selanjutnya <i class="fas fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 3: QUIZ ARENA ==================== -->
+    <section id="view-quiz" class="view-section">
+      <div class="quiz-hub">
+        
+        <!-- Left: Quiz Generator & Configuration -->
+        <div class="quiz-config-card" id="quizSetupCard">
+          <div>
+            <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 0.25rem; display:flex; align-items:center; gap:0.4rem;">
+              <i class="fas fa-sliders-h" style="color:var(--crimson-500);"></i> Generator Kuis
+            </h3>
+            <p style="font-size: 0.82rem; color: var(--text-muted);">Pilih level dan mode kuis sesuai keinginanmu.</p>
+          </div>
+
+          <!-- Level Picker -->
+          <div class="config-group">
+            <label>Tingkat HSK</label>
+            <div class="config-options-grid">
+              <button class="config-option-btn active" data-cfg-type="level" data-cfg-val="all">Semua Level</button>
+              <button class="config-option-btn" data-cfg-type="level" data-cfg-val="1">HSK 1</button>
+              <button class="config-option-btn" data-cfg-type="level" data-cfg-val="2">HSK 2</button>
+              <button class="config-option-btn" data-cfg-type="level" data-cfg-val="3">HSK 3</button>
+              <button class="config-option-btn" data-cfg-type="level" data-cfg-val="4">HSK 4</button>
+              <button class="config-option-btn" data-cfg-type="level" data-cfg-val="5">HSK 5</button>
+            </div>
+          </div>
+
+          <!-- Mode Picker -->
+          <div class="config-group">
+            <label>Mode Soal</label>
+            <div style="display:flex; flex-direction:column; gap:0.4rem;">
+              <button class="config-option-btn active" data-cfg-type="mode" data-cfg-val="hanzi_to_meaning" style="justify-content:flex-start;">
+                <i class="fas fa-font"></i> Hanzi ➔ Arti Indonesia
+              </button>
+              <button class="config-option-btn" data-cfg-type="mode" data-cfg-val="pinyin_to_hanzi" style="justify-content:flex-start;">
+                <i class="fas fa-spell-check"></i> Pinyin ➔ Karakter Hanzi
+              </button>
+              <button class="config-option-btn" data-cfg-type="mode" data-cfg-val="meaning_to_hanzi" style="justify-content:flex-start;">
+                <i class="fas fa-language"></i> Arti Indonesia ➔ Hanzi
+              </button>
+              <button class="config-option-btn" data-cfg-type="mode" data-cfg-val="listening" style="justify-content:flex-start;">
+                <i class="fas fa-headphones"></i> Dengar Audio ➔ Hanzi
+              </button>
+            </div>
+          </div>
+
+          <!-- Count Picker -->
+          <div class="config-group">
+            <label>Jumlah Soal</label>
+            <div class="config-options-grid">
+              <button class="config-option-btn" data-cfg-type="count" data-cfg-val="5">5 Soal</button>
+              <button class="config-option-btn active" data-cfg-type="count" data-cfg-val="10">10 Soal</button>
+              <button class="config-option-btn" data-cfg-type="count" data-cfg-val="15">15 Soal</button>
+              <button class="config-option-btn" data-cfg-type="count" data-cfg-val="20">20 Soal</button>
+            </div>
+          </div>
+
+          <!-- Timer Option -->
+          <div class="config-group">
+            <label>Waktu Per Soal</label>
+            <div class="config-options-grid">
+              <button class="config-option-btn" data-cfg-type="timer" data-cfg-val="10">10 Detik</button>
+              <button class="config-option-btn active" data-cfg-type="timer" data-cfg-val="15">15 Detik</button>
+              <button class="config-option-btn" data-cfg-type="timer" data-cfg-val="20">20 Detik</button>
+              <button class="config-option-btn" data-cfg-type="timer" data-cfg-val="30">30 Detik</button>
+            </div>
+          </div>
+
+          <button class="start-quiz-btn" onclick="QUIZ_ENGINE.start()">
+            <i class="fas fa-play"></i> Mulai Kuis Sekarang
+          </button>
+        </div>
+
+        <!-- Right: Active Quiz Arena & Results -->
+        <div class="quiz-play-area" id="quizPlayCard" style="display:none;">
+          <div>
+            <div class="quiz-header">
+              <div id="quizCountDisplay" style="font-weight:700; font-size:0.95rem;">Soal 1 dari 10</div>
+              <div class="quiz-progress-bar-container">
+                <div class="quiz-progress-bar" id="quizProgressBar"></div>
+              </div>
+              <div class="quiz-timer-badge" id="quizTimerDisplay">
+                <i class="fas fa-clock"></i> 15s
+              </div>
+            </div>
+
+            <!-- Question Prompt Area -->
+            <div class="question-prompt-box">
+              <div class="question-sub" id="quizPromptSub">Pilihlah arti yang benar:</div>
+              <div class="question-main-display" id="quizPromptMain">你好</div>
+              <div class="question-pinyin-display" id="quizPromptPinyin">nǐ hǎo</div>
+              <div style="margin-top:0.75rem;">
+                <button class="btn-secondary" id="quizAudioBtn" style="display:none;" onclick="speakMandarin(QUIZ_ENGINE.questions[QUIZ_ENGINE.currentIndex].target.hanzi)">
+                  <i class="fas fa-volume-up"></i> Putar Ulang Audio
+                </button>
+              </div>
+            </div>
+
+            <!-- Multiple Choice Grid -->
+            <div class="quiz-answers-grid" id="quizOptionsGrid">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Quiz Result Screen -->
+        <div class="quiz-play-area" id="quizResultCard" style="display:none;">
+          <div class="quiz-result-summary">
+            <div class="result-trophy">🏆</div>
+            <h2 style="font-size: 2rem; font-weight: 800; margin-bottom: 0.5rem;">Kuis Selesai!</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Kerja bagus! Terus asah kemampuan bahasa Mandarinmu setiap hari.</p>
+            
+            <div style="display:flex; justify-content:center; gap:2rem; margin-bottom:2rem; flex-wrap:wrap;">
+              <div style="background:var(--bg-secondary); padding:1rem 1.5rem; border-radius:var(--radius-md); border:1px solid var(--border-color); min-width:130px;">
+                <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Skor</div>
+                <div style="font-size:1.6rem; font-weight:800; color:var(--jade-400);" id="resultScoreDisplay">10 / 10</div>
+              </div>
+              <div style="background:var(--bg-secondary); padding:1rem 1.5rem; border-radius:var(--radius-md); border:1px solid var(--border-color); min-width:130px;">
+                <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Akurasi</div>
+                <div style="font-size:1.6rem; font-weight:800; color:var(--gold-400);" id="resultAccuracyDisplay">100%</div>
+              </div>
+              <div style="background:var(--bg-secondary); padding:1rem 1.5rem; border-radius:var(--radius-md); border:1px solid var(--border-color); min-width:130px;">
+                <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Reward</div>
+                <div style="font-size:1.6rem; font-weight:800; color:var(--crimson-500);" id="resultXpDisplay">+150 XP</div>
+              </div>
+            </div>
+
+            <div style="text-align:left; margin-bottom:1.5rem;">
+              <h4 style="font-size:0.95rem; font-weight:700; margin-bottom:0.75rem; color:var(--text-secondary);">Rincian Jawaban:</h4>
+              <div id="quizBreakdownList" style="max-height:220px; overflow-y:auto; padding-right:0.5rem;"></div>
+            </div>
+
+            <div style="display:flex; justify-content:center; gap:1rem;">
+              <button class="btn-primary" onclick="QUIZ_ENGINE.restart()">
+                <i class="fas fa-redo"></i> Kuis Baru
+              </button>
+              <button class="btn-secondary" onclick="switchTab('vocab')">
+                <i class="fas fa-book"></i> Kembali Belajar
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 4: HANZI STROKE WRITING CANVAS ==================== -->
+    <section id="view-practice" class="view-section">
+      <div style="text-align: center; margin-bottom: 1.5rem;">
+        <h2 style="font-size: 1.8rem; font-weight: 800; margin-bottom: 0.35rem;">Latihan Menulis Hanzi (书法练习)</h2>
+        <p style="color: var(--text-secondary);">Gunakan mouse atau layar sentuh untuk menulis di atas kisi tradisional 米字格 (Mi Zi Ge).</p>
+      </div>
+
+      <div class="canvas-practice-container">
+        
+        <!-- Writing Board -->
+        <div class="canvas-card">
+          <div style="margin-bottom: 1rem; display:flex; align-items:center; justify-content:space-between; width:320px;">
+            <span style="font-weight:700; font-size:1.1rem; color:var(--text-primary);">Karakter: <strong id="canvasTargetLabel" style="color:var(--crimson-500); font-size:1.3rem;">你</strong></span>
+            <button class="card-btn" onclick="speakMandarin(STATE.canvasStrokeHanzi)" title="Dengarkan Pengucapan">
+              <i class="fas fa-volume-up"></i>
+            </button>
+          </div>
+
+          <div class="canvas-grid-wrapper">
+            <div class="mizige-bg"></div>
+            <div class="ghost-hanzi" id="canvasGhostChar">你</div>
+            <canvas id="hanziCanvas"></canvas>
+          </div>
+
+          <!-- Canvas Controls -->
+          <div class="canvas-toolbar">
+            <button class="btn-secondary" onclick="clearCanvas()">
+              <i class="fas fa-eraser"></i> Bersihkan
+            </button>
+            <button class="btn-secondary" onclick="toggleGhostHanzi()">
+              <i class="fas fa-eye"></i> Tampilkan Panduan
+            </button>
+            <button class="btn-jade" onclick="showToast('Bagus sekali! Goresanmu rapi!', 'success'); SFX.correct();">
+              <i class="fas fa-check"></i> Selesai
+            </button>
+          </div>
+        </div>
+
+        <!-- Character Selection for Practice -->
+        <div class="maker-form-card">
+          <h3 style="font-size:1.1rem; font-weight:800; margin-bottom:0.75rem;">Pilih Karakter untuk Ditulis</h3>
+          <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1rem;">Ketik karakter apa saja atau pilih cepat dari daftar di bawah:</p>
+          
+          <div style="display:flex; gap:0.5rem; margin-bottom:1.5rem;">
+            <input type="text" id="customInputChar" maxlength="1" placeholder="cth: 好" style="background:var(--bg-tertiary); border:1px solid var(--border-color); color:var(--text-primary); padding:0.6rem; border-radius:var(--radius-md); font-size:1.2rem; text-align:center; width:80px; outline:none;">
+            <button class="btn-primary" onclick="const v = document.getElementById('customInputChar').value; if(v) setCanvasStrokeHanzi(v);">
+              Tulis Karakter Ini
+            </button>
+          </div>
+
+          <label style="font-size:0.82rem; font-weight:700; color:var(--text-secondary); text-transform:uppercase;">Rekomendasi Karakter HSK 1 - 3:</label>
+          <div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.75rem;" id="quickCharList">
+            <button onclick="setCanvasStrokeHanzi('你')" class="practice-char-btn">你</button>
+            <button onclick="setCanvasStrokeHanzi('好')" class="practice-char-btn">好</button>
+            <button onclick="setCanvasStrokeHanzi('我')" class="practice-char-btn">我</button>
+            <button onclick="setCanvasStrokeHanzi('他')" class="practice-char-btn">他</button>
+            <button onclick="setCanvasStrokeHanzi('学')" class="practice-char-btn">学</button>
+            <button onclick="setCanvasStrokeHanzi('中')" class="practice-char-btn">中</button>
+            <button onclick="setCanvasStrokeHanzi('国')" class="practice-char-btn">国</button>
+            <button onclick="setCanvasStrokeHanzi('吃')" class="practice-char-btn">吃</button>
+            <button onclick="setCanvasStrokeHanzi('喝')" class="practice-char-btn">喝</button>
+            <button onclick="setCanvasStrokeHanzi('家')" class="practice-char-btn">家</button>
+            <button onclick="setCanvasStrokeHanzi('水')" class="practice-char-btn">水</button>
+            <button onclick="setCanvasStrokeHanzi('朋')" class="practice-char-btn">朋</button>
+            <button onclick="setCanvasStrokeHanzi('友')" class="practice-char-btn">友</button>
+            <button onclick="setCanvasStrokeHanzi('爱')" class="practice-char-btn">爱</button>
+            <button onclick="setCanvasStrokeHanzi('明')" class="practice-char-btn">明</button>
+            <button onclick="setCanvasStrokeHanzi('天')" class="practice-char-btn">天</button>
+            <button onclick="setCanvasStrokeHanzi('钱')" class="practice-char-btn">钱</button>
+            <button onclick="setCanvasStrokeHanzi('书')" class="practice-char-btn">书</button>
+            <button onclick="setCanvasStrokeHanzi('看')" class="practice-char-btn">看</button>
+            <button onclick="setCanvasStrokeHanzi('听')" class="practice-char-btn">听</button>
+            <button onclick="setCanvasStrokeHanzi('说')" class="practice-char-btn">说</button>
+            <button onclick="setCanvasStrokeHanzi('写')" class="practice-char-btn">写</button>
+            <button onclick="setCanvasStrokeHanzi('时')" class="practice-char-btn">时</button>
+            <button onclick="setCanvasStrokeHanzi('间')" class="practice-char-btn">间</button>
+            <button onclick="setCanvasStrokeHanzi('机')" class="practice-char-btn">机</button>
+            <button onclick="setCanvasStrokeHanzi('场')" class="practice-char-btn">场</button>
+            <button onclick="setCanvasStrokeHanzi('走')" class="practice-char-btn">走</button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 5: PINYIN & TONES TRAINER ==================== -->
+    <section id="view-tones" class="view-section">
+      <div class="tone-trainer-card">
+        <h2 style="font-size: 1.8rem; font-weight: 800; margin-bottom: 0.35rem;">Pelatih 4 Nada Pinyin (声调训练)</h2>
+        <p style="color: var(--text-secondary);">Bahasa Mandarin adalah bahasa bernada (tonal language). Nada yang berbeda dapat menghasilkan arti kata yang sangat berbeda!</p>
+
+        <!-- 4 Tones Interactive Cards -->
+        <div class="tone-cards-grid">
+          <div class="tone-card-item" onclick="playToneSample(1)">
+            <div class="tone-symbol">ˉ</div>
+            <div class="tone-name">Nada 1 (mā)</div>
+            <div class="tone-desc">Tinggi & Datar (5-5)<br><strong>妈</strong> (Ibu)</div>
+            <button class="card-btn" style="margin: 0.5rem auto 0;"><i class="fas fa-volume-up"></i></button>
+          </div>
+
+          <div class="tone-card-item" onclick="playToneSample(2)">
+            <div class="tone-symbol">ˊ</div>
+            <div class="tone-name">Nada 2 (má)</div>
+            <div class="tone-desc">Naik Sedang ke Tinggi (3-5)<br><strong>麻</strong> (Rami/Kebas)</div>
+            <button class="card-btn" style="margin: 0.5rem auto 0;"><i class="fas fa-volume-up"></i></button>
+          </div>
+
+          <div class="tone-card-item" onclick="playToneSample(3)">
+            <div class="tone-symbol">ˇ</div>
+            <div class="tone-name">Nada 3 (mǎ)</div>
+            <div class="tone-desc">Turun lalu Naik (2-1-4)<br><strong>马</strong> (Kuda)</div>
+            <button class="card-btn" style="margin: 0.5rem auto 0;"><i class="fas fa-volume-up"></i></button>
+          </div>
+
+          <div class="tone-card-item" onclick="playToneSample(4)">
+            <div class="tone-symbol">ˋ</div>
+            <div class="tone-name">Nada 4 (mà)</div>
+            <div class="tone-desc">Tinggi jatuh Tajam (5-1)<br><strong>骂</strong> (Memarahi)</div>
+            <button class="card-btn" style="margin: 0.5rem auto 0;"><i class="fas fa-volume-up"></i></button>
+          </div>
+        </div>
+
+        <div style="background:var(--bg-secondary); padding:1.25rem; border-radius:var(--radius-md); text-align:left; border-left:4px solid var(--gold-400);">
+          <h4 style="color:var(--gold-400); margin-bottom:0.35rem;"><i class="fas fa-lightbulb"></i> Tips Mengingat Nada Pinyin:</h4>
+          <ul style="font-size:0.88rem; color:var(--text-secondary); margin-left:1.25rem; line-height:1.7;">
+            <li><strong>Nada 1:</strong> Nada tinggi datar seperti saat bernyanyi "laaa~"</li>
+            <li><strong>Nada 2:</strong> Nada naik seperti saat bertanya "Hah? Apa?"</li>
+            <li><strong>Nada 3:</strong> Nada mengayun turun ke dasar lalu naik lagi seperti "Oh... begitu~"</li>
+            <li><strong>Nada 4:</strong> Nada tegas dan cepat jatuh seperti perintah "Stop!" atau "Tidak!"</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 6: CUSTOM VOCAB & QUIZ MAKER ==================== -->
+    <section id="view-maker" class="view-section">
+      <div style="margin-bottom: 1.5rem;">
+        <h2 style="font-size: 1.8rem; font-weight: 800; margin-bottom: 0.35rem;">Pembuat Kuis & Kosakata Kustom</h2>
+        <p style="color: var(--text-secondary);">Tambahkan kosakata bahasa Mandarin milikmu sendiri atau dari buku pelajaran sekolahmu, dan buat kuis kustom secara otomatis.</p>
+      </div>
+
+      <div class="custom-maker-grid">
+        
+        <!-- Form Add Custom Word -->
+        <div class="maker-form-card">
+          <h3 style="font-size:1.15rem; font-weight:800; margin-bottom:1rem; display:flex; align-items:center; gap:0.4rem;">
+            <i class="fas fa-plus-circle" style="color:var(--crimson-500);"></i> Tambah Kata Baru
+          </h3>
+
+          <form id="customVocabForm">
+            <div class="form-group">
+              <label>Karakter Hanzi *</label>
+              <input type="text" id="customHanzi" required placeholder="cth: 咖啡">
+            </div>
+
+            <div class="form-group">
+              <label>Pinyin *</label>
+              <input type="text" id="customPinyin" required placeholder="cth: kāfēi">
+            </div>
+
+            <div class="form-group">
+              <label>Arti Bahasa Indonesia *</label>
+              <input type="text" id="customMeaningId" required placeholder="cth: Kopi">
+            </div>
+
+            <div class="form-group">
+              <label>Arti Bahasa Inggris (Opsional)</label>
+              <input type="text" id="customMeaningEn" placeholder="cth: Coffee">
+            </div>
+
+            <div class="form-group">
+              <label>Jenis Kata & Level</label>
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.5rem;">
+                <input type="text" id="customPos" placeholder="cth: Kata Benda">
+                <select id="customLevelSelect">
+                  <option value="1">Tingkat HSK 1</option>
+                  <option value="2">Tingkat HSK 2</option>
+                  <option value="3">Tingkat HSK 3</option>
+                  <option value="4">Tingkat HSK 4</option>
+                  <option value="5">Tingkat HSK 5</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Contoh Kalimat (Hanzi / Pinyin / Arti)</label>
+              <input type="text" id="customExCn" placeholder="Kalimat Hanzi (cth: 我想喝热咖啡。)" style="margin-bottom:0.4rem;">
+              <input type="text" id="customExPy" placeholder="Kalimat Pinyin (cth: Wǒ xiǎng hē rè kāfēi.)" style="margin-bottom:0.4rem;">
+              <input type="text" id="customExId" placeholder="Arti Kalimat (cth: Saya ingin minum kopi hangat.)">
+            </div>
+
+            <button type="submit" class="btn-primary" style="width:100%;">
+              <i class="fas fa-save"></i> Simpan Kosakata Kustom
+            </button>
+          </form>
+        </div>
+
+        <!-- Custom Vocab Table & Export / Import -->
+        <div class="maker-form-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
+            <h3 style="font-size:1.15rem; font-weight:800;">Daftar Kosakata Kustom</h3>
+            <div style="display:flex; gap:0.5rem;">
+              <button class="btn-secondary" onclick="exportCustomVocabJSON()" title="Ekspor ke JSON">
+                <i class="fas fa-download"></i> Ekspor
+              </button>
+              <label class="btn-secondary" style="cursor:pointer;" title="Impor file JSON">
+                <i class="fas fa-upload"></i> Impor
+                <input type="file" id="importVocabInput" accept=".json" style="display:none;">
+              </label>
+            </div>
+          </div>
+
+          <div style="overflow-x:auto;">
+            <table style="width:100%; border-collapse:collapse; text-align:left; font-size:0.88rem;">
+              <thead>
+                <tr style="border-bottom:1px solid var(--border-color); color:var(--text-muted); font-size:0.75rem; text-transform:uppercase;">
+                  <th style="padding:0.6rem 0.5rem;">No</th>
+                  <th style="padding:0.6rem 0.5rem;">Hanzi</th>
+                  <th style="padding:0.6rem 0.5rem;">Pinyin</th>
+                  <th style="padding:0.6rem 0.5rem;">Arti</th>
+                  <th style="padding:0.6rem 0.5rem; text-align:right;">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="customVocabTableBody">
+                <!-- Injected by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==================== TOAST NOTIFICATION CONTAINER ==================== -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- ==================== FOOTER ==================== -->
+  <footer class="footer">
+    <div style="max-width:1300px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+      <div>
+        <strong>HanziMaster (学中文)</strong> — Aplikasi Belajar Mandarin & Kuis HSK 1-5.
+      </div>
+      <div>
+        <span style="color:var(--text-muted);">Mendukung Web Speech API, Flashcard 3D & Canvas Menulis.</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="data/hsk-data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
