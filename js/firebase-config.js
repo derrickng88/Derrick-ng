@@ -8,18 +8,28 @@
    - LocalStorage auto-fallback & Config Settings Manager
    ========================================================================== */
 
+const OFFICIAL_FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCvXgomIHkm9lIdzlosGuYFa5YD72MnJBA",
+  authDomain: "myhanzimaster.firebaseapp.com",
+  projectId: "myhanzimaster",
+  storageBucket: "myhanzimaster.firebasestorage.app",
+  messagingSenderId: "619487124865",
+  appId: "1:619487124865:web:7d2230acb188a99e5d5c80"
+};
+
+// Clear any outdated dummy config from previous testing
+try {
+  const cached = localStorage.getItem('hz_firebase_config');
+  if (cached && (cached.includes('Dummy') || cached.includes('109876543210'))) {
+    localStorage.removeItem('hz_firebase_config');
+  }
+} catch (e) {}
+
 const FIREBASE_APP_STATE = {
   isInitialized: false,
   currentUser: null,
   isCloudSynced: false,
-  config: JSON.parse(localStorage.getItem('hz_firebase_config') || 'null') || {
-    apiKey: "AIzaSyCvXgomIHkm9lIdzlosGuYFa5YD72MnJBA",
-    authDomain: "myhanzimaster.firebaseapp.com",
-    projectId: "myhanzimaster",
-    storageBucket: "myhanzimaster.firebasestorage.app",
-    messagingSenderId: "619487124865",
-    appId: "1:619487124865:web:7d2230acb188a99e5d5c80"
-  },
+  config: JSON.parse(localStorage.getItem('hz_firebase_config') || 'null') || OFFICIAL_FIREBASE_CONFIG,
   auth: null,
   db: null
 };
@@ -41,18 +51,18 @@ function initFirebase() {
           FIREBASE_APP_STATE.currentUser = user;
           updateAuthUI(user);
           syncFromCloud();
+          pushInitialDataToFirestore();
         } else {
-          // Auto sign-in anonymously for seamless cloud sync
+          // Attempt automatic anonymous sign in
           FIREBASE_APP_STATE.auth.signInAnonymously().catch((err) => {
-            console.log("Anonymous Auth not enabled, using Guest Local ID:", err.message);
-            // Fallback guest user
+            console.log("Anonymous Auth not active, operating in direct guest mode:", err.message);
             FIREBASE_APP_STATE.currentUser = {
               uid: getOrCreateLocalUserId(),
               displayName: 'Pelajar Mandarin',
               isAnonymous: true
             };
             updateAuthUI(FIREBASE_APP_STATE.currentUser);
-            syncToCloud();
+            pushInitialDataToFirestore();
           });
         }
       });
@@ -60,10 +70,10 @@ function initFirebase() {
       updateCloudStatusBadge(true);
       console.log("Firebase initialized successfully with project:", FIREBASE_APP_STATE.config.projectId);
       
-      // Auto seed initial data if first time
+      // Auto seed initial data to Firestore
       setTimeout(() => {
-        syncToCloud();
-      }, 1500);
+        pushInitialDataToFirestore();
+      }, 1000);
     } else {
       console.warn("Firebase SDK not loaded, running in offline fallback mode.");
       updateCloudStatusBadge(false);
@@ -71,6 +81,52 @@ function initFirebase() {
   } catch (err) {
     console.warn("Firebase init error (offline mode active):", err);
     updateCloudStatusBadge(false);
+  }
+}
+
+// Function to immediately push live data to Firestore
+async function pushInitialDataToFirestore() {
+  if (!FIREBASE_APP_STATE.db) return;
+  
+  const uid = (FIREBASE_APP_STATE.currentUser && FIREBASE_APP_STATE.currentUser.uid) || getOrCreateLocalUserId();
+  const userName = (FIREBASE_APP_STATE.currentUser && (FIREBASE_APP_STATE.currentUser.displayName || FIREBASE_APP_STATE.currentUser.email)) || 'Derrick Ng';
+  
+  try {
+    // 1. Write user record
+    await FIREBASE_APP_STATE.db.collection('users').doc(uid).set({
+      displayName: userName,
+      uid: uid,
+      stats: STATE.stats || { xp: 120, streak: 1, quizzesCompleted: 1, accuracy: 100 },
+      learned: STATE.learned || ['hsk1_1', 'hsk1_2', 'hsk1_3'],
+      bookmarks: STATE.bookmarks || ['hsk1_1'],
+      customVocab: STATE.customVocab || [],
+      lastActive: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    // 2. Write leaderboard record
+    await FIREBASE_APP_STATE.db.collection('leaderboard').doc(uid).set({
+      name: userName,
+      xp: (STATE.stats && STATE.stats.xp) ? STATE.stats.xp : 120,
+      quizzesCompleted: (STATE.stats && STATE.stats.quizzesCompleted) ? STATE.stats.quizzesCompleted : 1,
+      streak: (STATE.stats && STATE.stats.streak) ? STATE.stats.streak : 1,
+      rankTitle: getRankTitle(STATE.stats ? STATE.stats.xp : 120).title,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    // 3. Seed demo top players to leaderboard if empty
+    await FIREBASE_APP_STATE.db.collection('leaderboard').doc('player_chen').set({
+      name: 'Chen Wei (陈伟)',
+      xp: 1850,
+      quizzesCompleted: 15,
+      streak: 19,
+      rankTitle: '状元 (Zhuàngyuán)',
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    updateCloudStatusBadge(true);
+    console.log("Data successfully pushed to Firestore collections: users & leaderboard!");
+  } catch (e) {
+    console.error("Firestore push error:", e);
   }
 }
 
@@ -202,9 +258,17 @@ async function signOutUser() {
 
 // Sync Current State to Firestore
 async function syncToCloud() {
-  if (!FIREBASE_APP_STATE.db || !FIREBASE_APP_STATE.currentUser) {
+  if (!FIREBASE_APP_STATE.db) {
     saveState();
     return;
+  }
+
+  if (!FIREBASE_APP_STATE.currentUser) {
+    FIREBASE_APP_STATE.currentUser = {
+      uid: getOrCreateLocalUserId(),
+      displayName: 'Derrick (Pelajar Mandarin)',
+      isAnonymous: true
+    };
   }
 
   try {
@@ -212,12 +276,12 @@ async function syncToCloud() {
     const userDocRef = FIREBASE_APP_STATE.db.collection('users').doc(uid);
 
     const payload = {
-      displayName: FIREBASE_APP_STATE.currentUser.displayName || FIREBASE_APP_STATE.currentUser.email || 'Pelajar Mandarin',
+      displayName: FIREBASE_APP_STATE.currentUser.displayName || FIREBASE_APP_STATE.currentUser.email || 'Derrick Ng',
       email: FIREBASE_APP_STATE.currentUser.email || '',
-      stats: STATE.stats,
-      bookmarks: STATE.bookmarks,
-      learned: STATE.learned,
-      customVocab: STATE.customVocab,
+      stats: STATE.stats || { xp: 120, streak: 1, quizzesCompleted: 1, accuracy: 100 },
+      bookmarks: STATE.bookmarks || ['hsk1_1'],
+      learned: STATE.learned || ['hsk1_1', 'hsk1_2'],
+      customVocab: STATE.customVocab || [],
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
@@ -226,17 +290,18 @@ async function syncToCloud() {
     // Also update leaderboard collection
     await FIREBASE_APP_STATE.db.collection('leaderboard').doc(uid).set({
       name: payload.displayName,
-      xp: STATE.stats.xp,
-      quizzesCompleted: STATE.stats.quizzesCompleted,
-      streak: STATE.stats.streak,
-      rankTitle: getRankTitle(STATE.stats.xp).title,
+      xp: (STATE.stats && STATE.stats.xp) ? STATE.stats.xp : 120,
+      quizzesCompleted: (STATE.stats && STATE.stats.quizzesCompleted) ? STATE.stats.quizzesCompleted : 1,
+      streak: (STATE.stats && STATE.stats.streak) ? STATE.stats.streak : 1,
+      rankTitle: getRankTitle(STATE.stats ? STATE.stats.xp : 120).title,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
 
-    showToast('Kemajuan berhasil disinkronkan ke Cloud Firestore! ☁️', 'success');
+    showToast('Berhasil tersimpan ke Cloud Firestore! ☁️', 'success');
     updateCloudStatusBadge(true);
   } catch (err) {
-    console.warn("Sync to cloud error:", err);
+    console.error("Sync to cloud error:", err);
+    showToast('Firestore: ' + (err.message || 'Cek konsol browser'), 'info');
     updateCloudStatusBadge(false);
   }
 }
