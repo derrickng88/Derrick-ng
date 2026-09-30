@@ -13,10 +13,10 @@ const FIREBASE_APP_STATE = {
   currentUser: null,
   isCloudSynced: false,
   config: JSON.parse(localStorage.getItem('hz_firebase_config') || 'null') || {
-    apiKey: "AIzaSyDemoKeyMandarinLearningApp2026_01",
-    authDomain: "hanzimaster-chinese-app.firebaseapp.com",
-    projectId: "hanzimaster-chinese-app",
-    storageBucket: "hanzimaster-chinese-app.appspot.com",
+    apiKey: "AIzaSyDummyKey_myhanzimaster_app",
+    authDomain: "myhanzimaster.firebaseapp.com",
+    projectId: "myhanzimaster",
+    storageBucket: "myhanzimaster.appspot.com",
     messagingSenderId: "109876543210",
     appId: "1:109876543210:web:abcdef1234567890"
   },
