@@ -1,0 +1,24 @@
+{
+  "name": "derrick-ng",
+  "version": "1.0.0",
+  "description": "Aplikasi web modern, interaktif, dan komprehensif untuk belajar bahasa Mandarin dengan kosakata resmi standar **HSK 1 hingga HSK 5**, dilengkapi pembuat kuis kustom, audio pengucapan asli, latihan menulis Hanzi, dan pelatih nada Pinyin.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/derrickng88/Derrick-ng.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/derrickng88/Derrick-ng/issues"
+  },
+  "homepage": "https://github.com/derrickng88/Derrick-ng#readme",
+  "dependencies": {
+    "firebase": "^12.19.0"
+  }
+}

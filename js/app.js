@@ -114,6 +114,11 @@ function saveState() {
   localStorage.setItem('hz_custom_vocab', JSON.stringify(STATE.customVocab));
   localStorage.setItem('hz_stats', JSON.stringify(STATE.stats));
   updateStatsDisplay();
+
+  // Auto-sync to Firebase if logged in
+  if (typeof syncToCloud === 'function' && typeof FIREBASE_APP_STATE !== 'undefined' && FIREBASE_APP_STATE.currentUser) {
+    syncToCloud();
+  }
 }
 
 function checkDailyStreak() {
@@ -1047,13 +1052,167 @@ function switchTab(tabId) {
     renderVocabCards();
   } else if (tabId === 'dictionary') {
     renderDictionary();
+  } else if (tabId === 'dialogues') {
+    renderDialogues();
+  } else if (tabId === 'radicals') {
+    renderRadicals();
   } else if (tabId === 'flashcards') {
     initFlashcardMode();
   } else if (tabId === 'practice') {
     initCanvas();
+  } else if (tabId === 'leaderboard') {
+    if (typeof fetchGlobalLeaderboard === 'function') fetchGlobalLeaderboard();
   } else if (tabId === 'maker') {
     renderCustomVocabList();
   }
+}
+
+// ==========================================
+// SITUATIONAL DIALOGUES LOGIC
+// ==========================================
+let currentDialogueId = "dia_01";
+
+function renderDialogues() {
+  const tabsContainer = document.getElementById('dialogueTabsContainer');
+  const activeContainer = document.getElementById('activeDialogueContainer');
+  if (!tabsContainer || !activeContainer || typeof SITUATIONAL_DIALOGUES === 'undefined') return;
+
+  // Render Tabs
+  tabsContainer.innerHTML = SITUATIONAL_DIALOGUES.map(dia => `
+    <button class="hsk-pill ${dia.id === currentDialogueId ? 'active' : ''}" onclick="selectDialogue('${dia.id}')">
+      <i class="fas ${dia.icon || 'fa-comments'}"></i> <span>${dia.title}</span>
+    </button>
+  `).join('');
+
+  const activeDia = SITUATIONAL_DIALOGUES.find(d => d.id === currentDialogueId) || SITUATIONAL_DIALOGUES[0];
+  if (!activeDia) return;
+
+  activeContainer.innerHTML = `
+    <div class="maker-form-card" style="margin-bottom:1.5rem;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom:1px solid var(--border-color); padding-bottom:0.75rem;">
+        <h3 style="font-size:1.3rem; font-weight:800; color:var(--text-primary);">
+          <i class="fas ${activeDia.icon}" style="color:var(--crimson-500); margin-right:0.4rem;"></i> ${activeDia.title}
+        </h3>
+        <button class="btn-primary" onclick="playFullDialogue('${activeDia.id}')">
+          <i class="fas fa-play"></i> Putar Seluruh Dialog
+        </button>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:1rem;">
+        ${activeDia.lines.map((line, idx) => `
+          <div style="background:var(--bg-secondary); border-radius:var(--radius-md); padding:1rem 1.25rem; border:1px solid var(--border-color); border-left:4px solid ${idx % 2 === 0 ? 'var(--crimson-500)' : 'var(--jade-400)'}; display:flex; justify-content:space-between; align-items:flex-start; gap:1rem;">
+            <div style="flex:1;">
+              <div style="font-size:0.78rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:0.3rem;">${line.speaker}</div>
+              <div style="font-family:var(--font-hanzi); font-size:1.35rem; font-weight:700; color:var(--text-primary); margin-bottom:0.25rem;">${line.cn}</div>
+              <div style="font-size:0.92rem; color:var(--gold-400); font-weight:600; margin-bottom:0.25rem;">${line.py}</div>
+              <div style="font-size:0.85rem; color:var(--text-secondary);">${line.id}</div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:0.4rem;">
+              <button class="card-btn" onclick="speakMandarin('${line.cn}')" title="Dengarkan Baris Ini">
+                <i class="fas fa-volume-up"></i>
+              </button>
+              <button class="card-btn" onclick="testVoicePronunciation('${line.cn}')" title="Latihan Bicara (Voice Check)" style="color:var(--indigo-500);">
+                <i class="fas fa-microphone"></i>
+              </button>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function selectDialogue(id) {
+  SFX.click();
+  currentDialogueId = id;
+  renderDialogues();
+}
+
+function playFullDialogue(id) {
+  const dia = SITUATIONAL_DIALOGUES.find(d => d.id === id);
+  if (!dia) return;
+
+  showToast('Memutar audio percakapan lengkap...', 'info');
+  dia.lines.forEach((line, idx) => {
+    setTimeout(() => {
+      speakMandarin(line.cn);
+    }, idx * 3500);
+  });
+}
+
+// ==========================================
+// CHINESE RADICALS LOGIC
+// ==========================================
+function renderRadicals() {
+  const container = document.getElementById('radicalsGridContainer');
+  if (!container || typeof MANDARIN_RADICALS === 'undefined') return;
+
+  container.innerHTML = MANDARIN_RADICALS.map(rad => `
+    <div class="vocab-card">
+      <div class="card-top">
+        <span class="hsk-level-tag hsk1">${rad.pinyin}</span>
+        <button class="card-btn" onclick="speakMandarin('${rad.radical.split(' ')[0]}')" title="Dengarkan"><i class="fas fa-volume-up"></i></button>
+      </div>
+
+      <div class="card-main">
+        <div class="card-hanzi" style="font-size:2.8rem; color:var(--crimson-500);">${rad.radical}</div>
+        <div style="font-weight:700; font-size:1.05rem; color:var(--text-primary); margin-bottom:0.25rem;">${rad.name}</div>
+        <div style="font-size:0.85rem; color:var(--text-secondary);">${rad.meaning_id}</div>
+      </div>
+
+      <div style="background:var(--bg-secondary); border-radius:var(--radius-sm); padding:0.75rem; border-top:1px solid var(--border-color);">
+        <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:0.4rem;">Contoh Karakter Turunan:</div>
+        <div style="display:flex; flex-wrap:wrap; gap:0.4rem;">
+          ${rad.examples.map(ex => `
+            <span onclick="openPracticeCanvas('${ex.char}')" style="background:var(--bg-tertiary); padding:0.25rem 0.6rem; border-radius:6px; font-size:0.82rem; cursor:pointer; transition:all 0.2s ease;" title="${ex.pinyin}: ${ex.meaning} (Klik untuk tulis)">
+              <strong style="font-family:var(--font-hanzi); font-size:1rem; color:var(--text-primary);">${ex.char}</strong>
+              <span style="color:var(--gold-400); margin-left:0.2rem;">${ex.pinyin}</span>
+            </span>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ==========================================
+// SPEECH RECOGNITION (VOICE PRONUNCIATION CHECK)
+// ==========================================
+function testVoicePronunciation(targetText) {
+  SFX.click();
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRec) {
+    showToast('Browser ini belum mendukung Web Speech Recognition. Coba gunakan Google Chrome!', 'error');
+    return;
+  }
+
+  showToast(`Silakan ucapkan: "${targetText}" ke mikrofon... 🎙️`, 'info');
+
+  const recognition = new SpeechRec();
+  recognition.lang = 'zh-CN';
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+
+  recognition.onresult = (event) => {
+    const spokenText = event.results[0][0].transcript;
+    const isClose = spokenText.includes(targetText) || targetText.includes(spokenText);
+
+    if (isClose) {
+      SFX.correct();
+      addXP(25);
+      showToast(`Luar biasa! Pengucapan Anda tepat: "${spokenText}" (+25 XP) 🎉`, 'success');
+    } else {
+      SFX.wrong();
+      showToast(`Terdengar: "${spokenText}". Coba ulangi lagi lebih jelas!`, 'error');
+    }
+  };
+
+  recognition.onerror = (event) => {
+    console.warn("Speech error:", event.error);
+    showToast(`Gagal mendeteksi suara: ${event.error}`, 'error');
+  };
+
+  recognition.start();
 }
 
 // --- Theme Toggle ---
@@ -1077,6 +1236,11 @@ document.addEventListener('DOMContentLoaded', () => {
   document.documentElement.setAttribute('data-theme', savedTheme);
   const themeIcon = document.getElementById('themeToggleIcon');
   if (themeIcon) themeIcon.className = savedTheme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
+
+  // Initialize Firebase Cloud Connection
+  if (typeof initFirebase === 'function') {
+    initFirebase();
+  }
 
   checkDailyStreak();
   updateStatsDisplay();
